@@ -56,6 +56,7 @@ void test01()
       s1.signal ();
       s2.wait ();
       fclose(file);
+      s1.signal();
       exit(0);
     }
   
@@ -79,6 +80,7 @@ void test01()
   VERIFY( c5 != WEOF );
   VERIFY( c5 == c4 );
   s2.signal ();
+  s1.wait();
 }
 
 int main()

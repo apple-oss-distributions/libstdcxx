@@ -1,3 +1,7 @@
+2005-12-12  Howard Hinnant  <hhinnant@apple.com>
+
+       * include/std/std_stdexcept.h: Added default visibility pragmas.
+
 2005-04-20  Release Manager
 
 	* GCC 4.0.0 released.

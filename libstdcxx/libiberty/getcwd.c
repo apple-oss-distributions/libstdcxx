@@ -58,7 +58,8 @@ getcwd (buf, len)
 	   return 0;
        }
     }
-    strcpy (buf, ourbuf);
+    /* LUNA LOCAL don't use unbounded string writes */
+    strlcpy (buf, ourbuf, len);
   }
   return buf;
 }

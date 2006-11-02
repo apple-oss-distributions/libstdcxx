@@ -75,8 +75,16 @@ namespace std
 		     _Tv __v, const __c_locale&, int __prec)
     {
       char* __old = std::setlocale(LC_ALL, NULL);
+/* LUNA LOCAL begin don't use unbounded string writes */
+#if defined(_ANSI_SOURCE) || (defined(_POSIX_C_SOURCE) && ! defined(_DARWIN_C_SOURCE))
       char* __sav = new char[std::strlen(__old) + 1];
       std::strcpy(__sav, __old);
+#else
+      size_t __savlen = std::strlen(__old) + 1;
+      char* __sav = new char[__savlen];
+      ::strlcpy(__sav, __old, __savlen);
+#endif
+/* LUNA LOCAL end don't use unbounded string writes */
       std::setlocale(LC_ALL, "C");
 #endif
 

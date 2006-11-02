@@ -100,7 +100,8 @@ dupargv (argv)
 	  freeargv (copy);
 	  return NULL;
 	}
-      strcpy (copy[argc], argv[argc]);
+      /* LUNA LOCAL don't use unbounded string writes */
+      strlcpy (copy[argc], argv[argc], sizeof (char *) * (len + 1));
     }
   copy[argc] = NULL;
   return copy;

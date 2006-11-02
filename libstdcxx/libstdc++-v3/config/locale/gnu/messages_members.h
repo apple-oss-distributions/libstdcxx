@@ -46,8 +46,16 @@
      : facet(__refs), _M_c_locale_messages(_S_clone_c_locale(__cloc)),
      _M_name_messages(__s)
      {
+/* LUNA LOCAL begin don't use unbounded string writes */
+#if defined(_ANSI_SOURCE) || (defined(_POSIX_C_SOURCE) && ! defined(_DARWIN_C_SOURCE))
        char* __tmp = new char[std::strlen(__s) + 1];
        std::strcpy(__tmp, __s);
+#else
+       size_t __tmplen = std::strlen(__s) + 1;
+       char* __tmp = new char[__tmplen];
+       ::strlcpy(__tmp, __s, __tmplen);
+#endif
+/* LUNA LOCAL end don't use unbounded string writes */
        _M_name_messages = __tmp;
      }
 
@@ -92,8 +100,16 @@
      { 
        if (this->_M_name_messages != locale::facet::_S_get_c_name())
 	 delete [] this->_M_name_messages;
+/* LUNA LOCAL begin don't use unbounded string writes */
+#if defined(_ANSI_SOURCE) || (defined(_POSIX_C_SOURCE) && ! defined(_DARWIN_C_SOURCE))
        char* __tmp = new char[std::strlen(__s) + 1];
        std::strcpy(__tmp, __s);
+#else
+       size_t __tmplen = std::strlen(__s) + 1;
+       char* __tmp = new char[__tmplen];
+       std::strlcpy(__tmp, __s, __tmplen);
+#endif
+/* LUNA LOCAL end don't use unbounded string writes */
        this->_M_name_messages = __tmp;
 
        if (std::strcmp(__s, "C") != 0 && std::strcmp(__s, "POSIX") != 0)

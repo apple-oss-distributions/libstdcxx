@@ -63,8 +63,16 @@ namespace std
       char* __sav = NULL;
       if (std::strcmp(__old, "C"))
 	{
+/* LUNA LOCAL begin don't use unbounded string writes */
+#if defined(_ANSI_SOURCE) || (defined(_POSIX_C_SOURCE) && ! defined(_DARWIN_C_SOURCE))
 	  __sav = new char[std::strlen(__old) + 1];
 	  std::strcpy(__sav, __old);
+#else
+	  size_t __savlen = std::strlen(__old) + 1;
+	  __sav = new char[__savlen];
+	  ::strlcpy(__sav, __old, __savlen);
+#endif
+/* LUNA LOCAL end don't use unbounded string writes */
 	  std::setlocale(LC_NUMERIC, "C");
 	}
 

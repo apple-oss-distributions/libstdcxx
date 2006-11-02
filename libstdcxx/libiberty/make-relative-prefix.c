@@ -248,10 +248,13 @@ make_relative_prefix (progname, bin_prefix, prefix)
 	{
 	  char *startp, *endp, *nstore;
 	  size_t prefixlen = strlen (temp) + 1;
+	  /* LUNA LOCAL don't use unbounded string writes */
+	  size_t nstore_size = prefixlen + strlen (progname) + 1;
 	  if (prefixlen < 2)
 	    prefixlen = 2;
 
-	  nstore = (char *) alloca (prefixlen + strlen (progname) + 1);
+	  /* LUNA LOCAL don't use unbounded string writes */
+	  nstore = (char *) alloca (nstore_size);
 
 	  startp = endp = temp;
 	  while (1)
@@ -275,7 +278,8 @@ make_relative_prefix (progname, bin_prefix, prefix)
 		      else
 			nstore[endp - startp] = 0;
 		    }
-		  strcat (nstore, progname);
+		  /* LUNA LOCAL don't use unbounded string writes */
+		  strlcat (nstore, progname, nstore_size);
 		  if (! access (nstore, X_OK)
 #ifdef HAVE_HOST_EXECUTABLE_SUFFIX
                       || ! access (strcat (nstore, HOST_EXECUTABLE_SUFFIX), X_OK)
@@ -372,13 +376,15 @@ make_relative_prefix (progname, bin_prefix, prefix)
   /* Build up the pathnames in argv[0].  */
   *ret = '\0';
   for (i = 0; i < prog_num; i++)
-    strcat (ret, prog_dirs[i]);
+    /* LUNA LOCAL don't use unbounded string writes */
+    strlcat (ret, prog_dirs[i], needed_len);
 
   /* Now build up the ..'s.  */
   ptr = ret + strlen(ret);
   for (i = common; i < bin_num; i++)
     {
-      strcpy (ptr, DIR_UP);
+      /* LUNA LOCAL don't use unbounded string writes */
+      strlcpy (ptr, DIR_UP, needed_len - (ptr - ret));
       ptr += sizeof (DIR_UP) - 1;
       *(ptr++) = DIR_SEPARATOR;
     }
@@ -386,7 +392,8 @@ make_relative_prefix (progname, bin_prefix, prefix)
 
   /* Put in directories to move over to prefix.  */
   for (i = common; i < prefix_num; i++)
-    strcat (ret, prefix_dirs[i]);
+    /* LUNA LOCAL don't use unbounded string writes */
+    strlcat (ret, prefix_dirs[i], needed_len);
 
   free_split_directories (prog_dirs);
   free_split_directories (bin_dirs);

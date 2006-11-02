@@ -55,8 +55,16 @@
 				     size_t __refs) 
     : facet(__refs), _M_data(NULL)
     { 
+/* LUNA LOCAL begin don't use unbounded string writes */
+#if defined(_ANSI_SOURCE) || (defined(_POSIX_C_SOURCE) && ! defined(_DARWIN_C_SOURCE))
       char* __tmp = new char[std::strlen(__s) + 1];
       std::strcpy(__tmp, __s);
+#else
+      size_t __tmplen = std::strlen(__s) + 1;
+      char* __tmp = new char[__tmplen];
+      ::strlcpy(__tmp, __s, __tmplen);
+#endif
+/* LUNA LOCAL end don't use unbounded string writes */
       _M_name_timepunct = __tmp;
       _M_initialize_timepunct(__cloc); 
     }

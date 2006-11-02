@@ -161,6 +161,7 @@ d_init_info PARAMS ((const char *, int, size_t, struct d_info *));
 #endif /* defined (__STDC__) */
 #endif /* ! defined (__GNUC__) */
 
+/* LUNA LOCAL begin don't use unbounded string writes */
 /* We avoid pulling in the ctype tables, to prevent pulling in
    additional unresolved symbols when this code is used in a library.
    FIXME: Is this really a valid reason?  This comes from the original
@@ -168,7 +169,8 @@ d_init_info PARAMS ((const char *, int, size_t, struct d_info *));
 
    As of this writing this file has the following undefined references
    when compiled with -DIN_GLIBCPP_V3: malloc, realloc, free, memcpy,
-   strcpy, strcat, strlen.  */
+   strlcpy, strlcat, strlen.  */
+/* LUNA LOCAL end don't use unbounded string writes */
 
 #define IS_DIGIT(c) ((c) >= '0' && (c) <= '9')
 #define IS_UPPER(c) ((c) >= 'A' && (c) <= 'Z')
@@ -3891,20 +3893,23 @@ d_demangle (mangled, options, palc)
 	   && (mangled[9] == 'D' || mangled[9] == 'I')
 	   && mangled[10] == '_')
     {
+      /* LUNA LOCAL begin don't use unbounded string writes */
       char *r;
+      size_t r_len = 40 + len - 11;
 
-      r = malloc (40 + len - 11);
+      r = malloc (r_len);
       if (r == NULL)
 	*palc = 1;
       else
 	{
 	  if (mangled[9] == 'I')
-	    strcpy (r, "global constructors keyed to ");
+	    strlcpy (r, "global constructors keyed to ", r_len);
 	  else
-	    strcpy (r, "global destructors keyed to ");
-	  strcat (r, mangled + 11);
+	    strlcpy (r, "global destructors keyed to ", r_len);
+	  strlcat (r, mangled + 11, r_len);
 	}
       return r;
+      /* LUNA LOCAL end don't use unbounded string writes */
     }
   else
     {
@@ -4070,7 +4075,8 @@ __cxa_demangle (mangled_name, output_buffer, length, status)
     {
       if (strlen (demangled) < *length)
 	{
-	  strcpy (output_buffer, demangled);
+	  /* LUNA LOCAL don't use unbounded string writes */
+	  strlcpy (output_buffer, demangled, *length);
 	  free (demangled);
 	  demangled = output_buffer;
 	}

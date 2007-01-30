@@ -1,3 +1,7 @@
+2006-11-14  Howard Hinnant  <hhinnant@apple.com>
+
+       * Applied PR28587 (vector<bool> performance)
+
 2005-12-12  Howard Hinnant  <hhinnant@apple.com>
 
        * include/std/std_stdexcept.h: Added default visibility pragmas.

@@ -37,8 +37,10 @@ AEP_Patches    = tilde-in-pathnames.patch emergency-buffer-reduction.patch \
 		 keymgr.patch testing-installed.patch align-natural-abi.patch \
 		 export-control.patch cross-configury.patch eprintf.patch \
 		 testsuite-4.0.1.patch \
-		 libtool-jaguar.patch jaguar-semun.patch jaguar-abilimits.patch \
-		 stdexcept_vis.patch testuite-06-03-10.patch
+		 libtool-jaguar.patch jaguar-semun.patch \
+		 jaguar-abilimits.patch \
+		 stdexcept_vis.patch testuite-06-03-10.patch fstream.patch \
+		 x86_vis.patch vector_bool.patch pr21244.patch
 
 ifeq ($(suffix $(AEP_Filename)),.bz2)
 AEP_ExtractOption = j
@@ -47,6 +49,8 @@ AEP_ExtractOption = z
 endif
 
 Install_Target = install
+
+CUR_OS_VERS	:= $(shell uname -r | cut -f 1 -d .)
 
 ifeq ($(RC_ProjectName),libstdcxx_Jaguar)
 DARWIN_VERS	= 6
@@ -70,7 +74,18 @@ SDKPFXs		= /Developer/SDKs/MacOSX10.3.9.sdk \
 		  /Developer/SDKs/MacOSX10.3.internal.sdk
 SDKEXCLUDE	= \! -name \*.dylib
 else
+ifeq ($(RC_ProjectName),libstdcxx_Inca)
 DARWIN_VERS	= 8
+MACOSX_DEPLOYMENT_TARGET=10.4
+SYSROOT		= -isysroot /Developer/SDKs/MacOSX10.4u.sdk
+CC		:= /usr/bin/gcc $(SYSROOT)
+CXX		:= /usr/bin/g++ $(SYSROOT)
+SDKPFXs		= /Developer/SDKs/MacOSX10.4u.sdk \
+		  /Developer/SDKs/MacOSX10.4.0.Internal.sdk
+SDKEXCLUDE	= \! -name \*.dylib
+else
+DARWIN_VERS	= $(CUR_OS_VERS)
+endif
 endif
 endif
 
@@ -119,15 +134,26 @@ post-install:
 	cp -Rp $(DSTROOT)/usr/lib/*.{a,dylib} $(SYMROOT)/
 	strip -x $(DSTROOT)/usr/lib/*.dylib
 	strip -X -S $(DSTROOT)/usr/lib/*.a
+	for (( i = 8 ; i <= $(CUR_OS_VERS) ; i++)) ; do \
+	  [ $$i == $(DARWIN_VERS) ] || \
+	  for t in powerpc powerpc64 i686 x86_64 ; do \
+	    [ \! -d $(DSTROOT)/usr/include/c++/$(AEP_Version)/$${t}-apple-darwin$(DARWIN_VERS) ] \
+	      || ln -s $${t}-apple-darwin$(DARWIN_VERS) \
+		$(DSTROOT)/usr/include/c++/$(AEP_Version)/$${t}-apple-darwin$${i} \
+	      || exit 1 ; \
+	  done \
+	done
+	[ ! -d $(DSTROOT)/usr/include/c++/$(AEP_Version)/powerpc-apple-darwin$(CUR_OS_VERS) ] || \
+	  ln -s ../powerpc64-apple-darwin$(CUR_OS_VERS) \
+	    $(DSTROOT)/usr/include/c++/$(AEP_Version)/powerpc-apple-darwin$(CUR_OS_VERS)/ppc64
+	[ ! -d $(DSTROOT)/usr/include/c++/$(AEP_Version)/i686-apple-darwin$(CUR_OS_VERS) ] || \
+	  ln -s ../x86_64-apple-darwin$(CUR_OS_VERS) \
+	    $(DSTROOT)/usr/include/c++/$(AEP_Version)/i686-apple-darwin$(CUR_OS_VERS)/x86_64
 	if [ "x$(SDKPFXs)" != x ] ; then \
 	  for i in $(SDKPFXs) ; do \
 	    $(MKDIR) $(DSTROOT)/$i && \
 	    (cd $(DSTROOT) && find usr $(SDKEXCLUDE) -print | \
 	     cpio -pdm $(DSTROOT)/$$i ) || exit 1 ; \
-	    if [ $(MACOSX_DEPLOYMENT_TARGET) == 10.3 ] ; then \
-	      ln -s powerpc-apple-darwin7 \
-	            $(DSTROOT)/$$i/usr/include/c++/4.0.0/powerpc-apple-darwin8 ; \
-	    fi ; \
 	  done ; \
 	  $(RM) -r $(DSTROOT)/[^D]* ; \
 	fi

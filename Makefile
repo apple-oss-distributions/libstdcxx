@@ -55,7 +55,7 @@ AEP_Patches    = tilde-in-pathnames.patch emergency-buffer-reduction.patch \
 		 abi-setfill.patch block.patch version.patch string_compare.patch \
 		 stl_tree_system_header.patch copy_doc.patch test_cleanup.patch \
 		 fix_64bit_test.patch vector_copy_no_alloc.patch \
-		 nodefault.patch dtrace.patch
+		 nodefault.patch dtrace.patch abi-list.patch demangle.patch
 endif
 
 ifeq ($(suffix $(AEP_Filename)),.bz2)
@@ -109,10 +109,10 @@ else
 DARWIN_VERS	= $(CUR_OS_VERS)
 ifdef SDKROOT
 SYSROOT		= -isysroot $(SDKROOT)
+SDKPFXs		= $(SDKROOT)
 endif
 CC		:= /usr/bin/gcc-4.2 $(SYSROOT)
 CXX		:= /usr/bin/g++-4.2 $(SYSROOT)
-SDKEXCLUDE	= \! -name libstdc++-static.a
 endif
 endif
 endif
@@ -139,21 +139,21 @@ endif
 
 # Rearrange the final destroot to be just the way we want it.
 post-install:
-	for arch_variant in ppc64 x86_64 v5 v6 v7 ; do \
-	  if [ -d $(DSTROOT)/usr/lib/$$arch_variant ] ; then \
+	for arch64 in ppc64 x86_64 v6 ; do \
+	  if [ -d $(DSTROOT)/usr/lib/$$arch64 ] ; then \
 	    install_name_tool -id /usr/lib/libstdc++.6.dylib \
-	      $(DSTROOT)/usr/lib/$$arch_variant/libstdc++.6.*.dylib && \
-	    for f in `cd $(DSTROOT)/usr/lib/$$arch_variant && echo *.{dylib,a}` ; do \
+	      $(DSTROOT)/usr/lib/$$arch64/libstdc++.6.*.dylib && \
+	    for f in `cd $(DSTROOT)/usr/lib/$$arch64 && echo *.{dylib,a}` ; do \
 	      if [ ! -f $(DSTROOT)/usr/lib/$$f ] ; then \
-		  mv $(DSTROOT)/usr/lib/$$arch_variant/$${f} $(DSTROOT)/usr/lib/$${f} ; \
-	      elif [ ! -L $(DSTROOT)/usr/lib/$$arch_variant/$$f ] ; then \
+		  mv $(DSTROOT)/usr/lib/$$arch64/$${f} $(DSTROOT)/usr/lib/$${f} ; \
+	      elif [ ! -L $(DSTROOT)/usr/lib/$$arch64/$$f ] ; then \
 		  lipo -create -output $(DSTROOT)/usr/lib/$${f}~ \
-		    $(DSTROOT)/usr/lib/$${f} $(DSTROOT)/usr/lib/$$arch_variant/$${f} && \
+		    $(DSTROOT)/usr/lib/$${f} $(DSTROOT)/usr/lib/$$arch64/$${f} && \
 		  mv $(DSTROOT)/usr/lib/$${f}~ $(DSTROOT)/usr/lib/$${f} || \
 		  exit 1 ; \
 	      fi ; \
 	    done && \
-	    $(RM) -r $(DSTROOT)/usr/lib/$$arch_variant ; \
+	    $(RM) -r $(DSTROOT)/usr/lib/$$arch64 ; \
 	  fi ; \
 	done
 	$(RM) $(DSTROOT)/usr/lib/*.la
@@ -181,15 +181,10 @@ post-install:
 	  ln -s ../x86_64-apple-darwin$(CUR_OS_VERS) \
 	    $(DSTROOT)/usr/include/c++/$(AEP_Version)/i686-apple-darwin$(CUR_OS_VERS)/x86_64
 	# For ARM, we want to create the arm-apple-darwinX directory if it doesn't exist
-	for arch in v5 v6 v7 ; do \
-	  if [ -d $(DSTROOT)/usr/include/c++/$(AEP_Version)/arm$${arch}-apple-darwin$(CUR_OS_VERS) ] ; then \
-	    if [ ! -d $(DSTROOT)/usr/include/c++/$(AEP_Version)/arm-apple-darwin$(CUR_OS_VERS) ] ; then \
-	      mkdir $(DSTROOT)/usr/include/c++/$(AEP_Version)/arm-apple-darwin$(CUR_OS_VERS) ; \
-	    fi ; \
-	    ln -s ../arm$${arch}-apple-darwin$(CUR_OS_VERS) \
-	          $(DSTROOT)/usr/include/c++/$(AEP_Version)/arm-apple-darwin$(CUR_OS_VERS)/$${arch} ; \
-	  fi ; \
-	done
+	[ -d $(DSTROOT)/usr/include/c++/$(AEP_Version)/arm-apple-darwin$(CUR_OS_VERS) ] || \
+	  mkdir $(DSTROOT)/usr/include/c++/$(AEP_Version)/arm-apple-darwin$(CUR_OS_VERS)
+	ln -s ../armv6-apple-darwin$(CUR_OS_VERS) \
+	  $(DSTROOT)/usr/include/c++/$(AEP_Version)/arm-apple-darwin$(CUR_OS_VERS)/v6
 	if [ "x$(SDKPFXs)" != x ] ; then \
 	  for i in $(SDKPFXs) ; do \
 	    $(MKDIR) $(DSTROOT)/$i && \
